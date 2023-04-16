@@ -1,10 +1,14 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const gravatar = require('gravatar');
+const fs = require('fs/promises');
+const path = require('path');
 const { ctrlWrapper } = require('../utils');
 
 const User = require("../models/user");
 
 const { HttpError } = require("../helpers");
+const avatarDir = path.join(__dirname, "../", "public", "avatars");
 const { SECRET_KEY } = process.env;
 
 const register = async (req, res) => {
@@ -14,7 +18,8 @@ const register = async (req, res) => {
         throw HttpError(409, 'Email in use');
     }
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({...req.body, password: hashPassword});
+    const avatarURL = gravatar.url(email);
+    const newUser = await User.create({...req.body, password: hashPassword, avatarURL});
     res.status(201).json({
         User: {
             email: newUser.email,
@@ -61,7 +66,6 @@ const logout = async (req, res) => {
 }
 
 async function updateUserSubscription(userId, newSubscription) {
-  try {
     if (!['starter', 'pro', 'business'].includes(newSubscription)) {
       throw HttpError(400, 'Invalid subscription value');
     }
@@ -71,27 +75,33 @@ async function updateUserSubscription(userId, newSubscription) {
       throw HttpError(404, 'User not found');
     }
     return updatedUser;
-    } catch (error) {
-        next(HttpError(400));
-    }
 };
 
 const updateSubscription = async (req, res, next) => {
     const { subscription } = req.body;
     const userId = req.user._id;
 
-    try {
         const updatedUser = await updateUserSubscription(userId, subscription);
         res.json(updatedUser);
-    } catch (error) {
-        next(HttpError(400));
-    }
 };
+
+const updateAvatar = async (req, res) => {
+    const { path: tempUpload, filename } = req.file;
+    const { _id } = req.user;
+    const savename = `${_id}_${filename}`;
+    const resultUpload = path.join(avatarDir, savename);
+    await fs.rename(tempUpload, resultUpload);
+    const avatarURL = path.join("avatars", savename);
+    await User.findByIdAndUpdate(_id, { avatarURL });
+
+    res.json({ avatarURL });
+}
 
 module.exports = {
     register: ctrlWrapper(register),
     login: ctrlWrapper(login),
     getCurrent: ctrlWrapper(getCurrent),
     logout: ctrlWrapper(logout),
-    updateSubscription: ctrlWrapper(updateSubscription)
+    updateSubscription: ctrlWrapper(updateSubscription),
+    updateAvatar: ctrlWrapper(updateAvatar)
 }
