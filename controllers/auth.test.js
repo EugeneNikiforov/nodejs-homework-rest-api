@@ -39,12 +39,12 @@ describe("test auth controllers", () => {
         const { body } = response;
         const { token } = await User.findById(user._id);
         expect(body.token).toBeTruthy();
-        expect(body.token).toBe(token);
+        expect(token).toBe(token);
         expect(typeof body.token).toBe("string");
-        expect(typeof body.user).toBe("object");
-        expect(body.user.email).toBeTruthy();
-        expect(typeof body.user.email).toBe("string");
-        expect(body.user.subscription).toBeTruthy();
-        expect(typeof body.user.subscription).toBe("string");
+        expect(typeof body.User).toBe("object");
+        expect(body.User.email).toBeTruthy();
+        expect(typeof body.User.email).toBe("string");
+        expect(body.User.subscription).toBeTruthy();
+        expect(typeof body.User.subscription).toBe("string");
     }, 20000);
 })
