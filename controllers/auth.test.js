@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const request = require('supertest');
 const gravatar = require('gravatar');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = require('../app');
@@ -22,12 +23,14 @@ describe("test auth controllers", () => {
     })
 
     test('test login controller', async () => {
+        const hashPassword = await bcrypt.hash("234567", 10);
         const newUser = {
-            password: "234567",
+            password: hashPassword,
             email: "ashiok@teros.com",
             subscription: "pro",
             avatarURL: gravatar.url("ashiok@teros.com")
         };
+        
         const user = await User.create(newUser);
         const loginUser = {
             password: "234567",
